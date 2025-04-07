@@ -1,742 +1,734 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Infinite Snake Deluxe</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <style>
-        /* Basic reset and body styling */
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #1a1a2e; /* Darker space blue */
-            margin: 0;
-            font-family: 'Press Start 2P', cursive;
-            color: #e0e0ff; /* Light lavender text */
-            overflow: hidden; /* Prevent scrolling */
-        }
-
-        /* Main game container styling */
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 5px solid #7a7a9c; /* Medium grey-blue border */
-            border-radius: 15px; /* More rounded */
-            padding: 20px;
-            background-color: #2a2a4a; /* Darker container background */
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-            max-width: 95%; /* Responsive width */
-        }
-
-        /* Canvas styling */
-        canvas {
-            background-color: #0a0a1a; /* Very dark canvas */
-            border: 3px solid #4a4a6c; /* Dark grey-blue border */
-            border-radius: 10px;
-            display: block;
-            max-width: 100%;
-            height: auto; /* Maintain aspect ratio */
-            touch-action: none; /* Disable default touch actions */
-        }
-
-        /* Score display area */
-        .controls-info {
-            display: flex;
-            justify-content: center; /* Center the score */
-            width: 100%;
-            max-width: 600px; /* Match new canvas width */
-            margin-top: 15px;
-            margin-bottom: 15px;
-            font-size: 16px; /* Larger score font */
-            padding: 0 10px;
-        }
-
-        #score-display {
-             color: #ffff00; /* Bright yellow score label */
-        }
-         #score-value {
-             color: #ffffff; /* White score value */
-             min-width: 50px;
-             display: inline-block;
-             text-align: right;
-         }
-         #score-multiplier-indicator {
-             color: #00ff00; /* Green multiplier text */
-             font-size: 12px;
-             margin-left: 5px;
-             display: inline-block; /* Keep it on the same line */
-             vertical-align: middle;
-         }
-
-
-        /* Buttons area styling */
-        .buttons {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap; /* Allow buttons to wrap on small screens */
-            justify-content: center; /* Center buttons */
-            gap: 10px; /* Space between buttons */
-        }
-
-        /* General button styling */
-        button {
-            padding: 12px 22px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 11px; /* Slightly smaller font for more buttons */
-            color: #ffffff;
-            background: linear-gradient(145deg, #5a5a8c, #4a4a7c); /* Purple/grey gradient */
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s ease;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-
-        button:hover {
-            background: linear-gradient(145deg, #6a6aa2, #5a5a8c);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Message box styling */
-        #message-box {
-            margin-top: 15px;
-            padding: 10px 20px;
-            background-color: rgba(231, 76, 60, 0.85); /* Red for game over */
-            color: white;
-            border-radius: 8px;
-            font-size: 12px;
-            text-align: center;
-            display: none; /* Hidden by default */
-            width: 85%;
-            max-width: 580px;
-        }
-
-        /* Instructions styling */
-        #instructions {
-             margin-top: 15px;
-             font-size: 10px;
-             color: #a0a0c0; /* Lighter grey-lavender */
-             text-align: center;
-             max-width: 580px;
-        }
-
-         /* Shared Panel Styling (High Scores & Item Legend) */
-         .panel-display {
-            display: none; /* Hidden by default */
-            position: fixed; /* Overlay */
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 85%; /* Responsive width */
-            max-width: 400px; /* Max width for readability */
-            background-color: rgba(42, 42, 74, 0.97); /* Slightly less transparent */
-            border: 3px solid #7a7a9c;
-            border-radius: 15px;
-            padding: 20px; /* Adjusted padding */
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            z-index: 1000; /* Ensure it's on top */
-            color: #e0e0ff;
-            text-align: center;
-         }
-         .panel-display h2 {
-             margin-top: 0;
-             margin-bottom: 20px;
-             font-size: 16px;
-             color: #ffff00; /* Yellow title */
-         }
-         .panel-display ul, .panel-display ol {
-             list-style: none;
-             padding: 0;
-             margin-bottom: 20px; /* Space before close button */
-             font-size: 11px; /* Smaller font for list items */
-             text-align: left;
-         }
-          .panel-display li {
-             margin-bottom: 10px; /* Space between items */
-             display: flex; /* Align items horizontally */
-             align-items: center; /* Vertically align items */
-             line-height: 1.4;
-         }
-         /* Specific list styling */
-         #high-scores-list li span:first-child {
-             margin-right: 15px; /* Space between rank and score */
-             color: #aaaaff; /* Lighter rank color */
-             min-width: 20px; /* Ensure rank numbers align */
-             display: inline-block;
-         }
-          /* Item Legend List Styling */
-         #item-legend-list .item-emoji {
-             font-size: 18px; /* Larger emoji */
-             margin-right: 10px; /* Space after emoji */
-             min-width: 25px; /* Ensure alignment */
-             display: inline-block;
-             text-align: center;
-         }
-         #item-legend-list .item-name {
-             font-weight: bold;
-             color: #ffffff; /* White item name */
-             margin-right: 5px;
-         }
-         #item-legend-list .item-desc {
-             color: #c0c0e0; /* Lighter description text */
-         }
-
-
-         .panel-display .close-button {
-             /* Use general button style - apply class to button */
-         }
-
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Infinite Snake Deluxe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- Include Howler.js for sound effects -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <style>
+    /* Animated gradient background */
+    @keyframes gradientAnimation {
+      0% { background-color: #1a1a2e; }
+      50% { background-color: #2a2a4a; }
+      100% { background-color: #1a1a2e; }
+    }
+    body {
+      animation: gradientAnimation 10s ease infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Press Start 2P', cursive;
+      color: #e0e0ff;
+      overflow: hidden;
+    }
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 5px solid #7a7a9c;
+      border-radius: 15px;
+      padding: 20px;
+      background-color: #2a2a4a;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+      max-width: 95%;
+    }
+    canvas {
+      background-color: #0a0a1a;
+      border: 3px solid #4a4a6c;
+      border-radius: 10px;
+      display: block;
+      max-width: 100%;
+      height: auto;
+      touch-action: none;
+    }
+    .controls-info {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      padding: 0 10px;
+    }
+    #score-display { color: #ffff00; }
+    #score-value {
+      color: #ffffff;
+      min-width: 50px;
+      display: inline-block;
+      text-align: right;
+    }
+    #score-multiplier-indicator {
+      color: #00ff00;
+      font-size: 12px;
+      margin-left: 5px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .buttons {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    button {
+      padding: 12px 22px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      color: #ffffff;
+      background: linear-gradient(145deg, #5a5a8c, #4a4a7c);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    button:hover {
+      background: linear-gradient(145deg, #6a6aa2, #5a5a8c);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    #message-box {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: rgba(231, 76, 60, 0.85);
+      color: white;
+      border-radius: 8px;
+      font-size: 12px;
+      text-align: center;
+      display: none;
+      width: 85%;
+      max-width: 580px;
+    }
+    #instructions {
+      margin-top: 15px;
+      font-size: 10px;
+      color: #a0a0c0;
+      text-align: center;
+      max-width: 580px;
+    }
+    .panel-display {
+      display: none;
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 85%;
+      max-width: 400px;
+      background-color: rgba(42, 42, 74, 0.97);
+      border: 3px solid #7a7a9c;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      color: #e0e0ff;
+      text-align: center;
+    }
+    .panel-display h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #ffff00;
+    }
+    .panel-display ul, .panel-display ol {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 20px;
+      font-size: 11px;
+      text-align: left;
+    }
+    .panel-display li {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      line-height: 1.4;
+    }
+    #high-scores-list li span:first-child {
+      margin-right: 15px;
+      color: #aaaaff;
+      min-width: 20px;
+      display: inline-block;
+    }
+    #item-legend-list .item-emoji {
+      font-size: 18px;
+      margin-right: 10px;
+      min-width: 25px;
+      display: inline-block;
+      text-align: center;
+    }
+    #item-legend-list .item-name {
+      font-weight: bold;
+      color: #ffffff;
+      margin-right: 5px;
+    }
+    #item-legend-list .item-desc {
+      color: #c0c0e0;
+    }
+  </style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="controls-info">
-            <span id="score-display">Score: <span id="score-value">0</span><span id="score-multiplier-indicator"></span></span>
-        </div>
-        <canvas id="gameCanvas" width="600" height="600"></canvas>
-         <div id="instructions">Arrow Keys/Swipe. Survive & Score High! Watch for special items!</div>
-        <div id="message-box">Game Over!</div>
-        <div class="buttons">
-            <button id="startButton">Start Game</button>
-            <button id="restartButton" style="display: none;">Restart</button>
-            <button id="highScoresButton">High Scores</button>
-            <button id="itemInfoButton">Item Info</button>
-        </div>
+  <div class="game-container">
+    <div class="controls-info">
+      <span id="score-display">Score: <span id="score-value">0</span><span id="score-multiplier-indicator"></span></span>
     </div>
-
-    <div id="high-scores-display" class="panel-display">
-        <h2>Top 5 Scores</h2>
-        <ol id="high-scores-list">
-            </ol>
-        <button id="close-high-scores" class="close-button">Close</button>
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+    <div id="instructions">Arrow Keys/Swipe. Survive & Score High! Watch for special items!</div>
+    <div id="message-box">Game Over!</div>
+    <div class="buttons">
+      <button id="startButton">Start Game</button>
+      <button id="restartButton" style="display: none;">Restart</button>
+      <button id="highScoresButton">High Scores</button>
+      <button id="itemInfoButton">Item Info</button>
+      <button id="fullscreenButton">Fullscreen</button>
     </div>
+  </div>
 
-    <div id="item-legend-display" class="panel-display">
-        <h2>Item Legend</h2>
-        <ul id="item-legend-list">
-            <li><span class="item-emoji">🍎</span><div><span class="item-name">Food:</span><span class="item-desc">+1 Score, Grow</span></div></li>
-            <li><span class="item-emoji">💎</span><div><span class="item-name">Gem:</span><span class="item-desc">+5 Score, Grow</span></div></li>
-            <li><span class="item-emoji">🚀</span><div><span class="item-name">Boost:</span><span class="item-desc">Temporary Speed Up</span></div></li>
-            <li><span class="item-emoji">🐢</span><div><span class="item-name">Slow:</span><span class="item-desc">Temporary Slow Down</span></div></li>
-            <li><span class="item-emoji">➖</span><div><span class="item-name">Shrink:</span><span class="item-desc">Reduce Length</span></div></li>
-            <li><span class="item-emoji">⭐</span><div><span class="item-name">Star:</span><span class="item-desc">Temporary Invincibility (Self)</span></div></li>
-            <li><span class="item-emoji">👻</span><div><span class="item-name">Ghost:</span><span class="item-desc">Pass Through Tail</span></div></li>
-            <li><span class="item-emoji">✨</span><div><span class="item-name">Sparkle:</span><span class="item-desc">Score Multiplier (x2)</span></div></li>
-            <li><span class="item-emoji">🧱</span><div><span class="item-name">Brick:</span><span class="item-desc">Creates Temporary Walls</span></div></li>
-        </ul>
-        <button id="close-item-legend" class="close-button">Close</button>
-    </div>
+  <div id="high-scores-display" class="panel-display">
+    <h2>Top 5 Scores</h2>
+    <ol id="high-scores-list"></ol>
+    <button id="close-high-scores" class="close-button">Close</button>
+  </div>
 
+  <div id="item-legend-display" class="panel-display">
+    <h2>Item Legend</h2>
+    <ul id="item-legend-list">
+      <li><span class="item-emoji">🍎</span><div><span class="item-name">Food:</span><span class="item-desc">+1 Score, Grow</span></div></li>
+      <li><span class="item-emoji">💎</span><div><span class="item-name">Gem:</span><span class="item-desc">+5 Score, Grow</span></div></li>
+      <li><span class="item-emoji">🚀</span><div><span class="item-name">Boost:</span><span class="item-desc">Temporary Speed Up</span></div></li>
+      <li><span class="item-emoji">🐢</span><div><span class="item-name">Slow:</span><span class="item-desc">Temporary Slow Down</span></div></li>
+      <li><span class="item-emoji">➖</span><div><span class="item-name">Shrink:</span><span class="item-desc">Reduce Length</span></div></li>
+      <li><span class="item-emoji">⭐</span><div><span class="item-name">Invincible:</span><span class="item-desc">Temporary Invincibility</span></div></li>
+      <li><span class="item-emoji">👻</span><div><span class="item-name">Ghost:</span><span class="item-desc">Pass Through Tail</span></div></li>
+      <li><span class="item-emoji">✨</span><div><span class="item-name">Multiplier:</span><span class="item-desc">x2 Score</span></div></li>
+      <li><span class="item-emoji">🧱</span><div><span class="item-name">Brick:</span><span class="item-desc">Creates Walls</span></div></li>
+      <li><span class="item-emoji">🔄</span><div><span class="item-name">Reverse:</span><span class="item-desc">Reverse Controls</span></div></li>
+    </ul>
+    <button id="close-item-legend" class="close-button">Close</button>
+  </div>
 
-    <script>
-        // --- Game Setup ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score-value');
-        const scoreMultiplierIndicator = document.getElementById('score-multiplier-indicator');
-        const messageBox = document.getElementById('message-box');
-        const startButton = document.getElementById('startButton');
-        const restartButton = document.getElementById('restartButton');
-        const instructions = document.getElementById('instructions');
-        // Panel Buttons & Displays
-        const highScoresButton = document.getElementById('highScoresButton');
-        const highScoresDisplay = document.getElementById('high-scores-display');
-        const highScoresList = document.getElementById('high-scores-list');
-        const closeHighScoresButton = document.getElementById('close-high-scores');
-        const itemInfoButton = document.getElementById('itemInfoButton');
-        const itemLegendDisplay = document.getElementById('item-legend-display');
-        const closeItemLegendButton = document.getElementById('close-item-legend');
+  <script>
+    // --- Sound Effects Setup ---
+    // Replace the src URLs with your own sound files or free sound URLs
+    const soundEat = new Howl({ src: ['sounds/eat.mp3'] });
+    const soundGameOver = new Howl({ src: ['sounds/gameover.mp3'] });
+    const soundButton = new Howl({ src: ['sounds/button.mp3'] });
 
+    // Utility function to play button sound
+    function playButtonSound() {
+      soundButton.play();
+    }
 
-        const box = 20; // Size of each grid unit
-        const canvasSize = 600; // Canvas dimensions
-        const HIGH_SCORE_KEY = 'snakeDeluxeHighScores';
-        const MAX_HIGH_SCORES = 5;
+    // --- Game Setup ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score-value');
+    const scoreMultiplierIndicator = document.getElementById('score-multiplier-indicator');
+    const messageBox = document.getElementById('message-box');
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const instructions = document.getElementById('instructions');
+    const highScoresButton = document.getElementById('highScoresButton');
+    const highScoresDisplay = document.getElementById('high-scores-display');
+    const highScoresList = document.getElementById('high-scores-list');
+    const closeHighScoresButton = document.getElementById('close-high-scores');
+    const itemInfoButton = document.getElementById('itemInfoButton');
+    const itemLegendDisplay = document.getElementById('item-legend-display');
+    const closeItemLegendButton = document.getElementById('close-item-legend');
+    const fullscreenButton = document.getElementById('fullscreenButton');
 
-        // --- Item Types & Emojis ---
-        const ItemType = {
-            STANDARD_FOOD: 'STANDARD_FOOD',
-            BONUS_FOOD: 'BONUS_FOOD',
-            SPEED_BOOST: 'SPEED_BOOST',
-            SLOW_DOWN: 'SLOW_DOWN',
-            SHRINK: 'SHRINK',
-            INVINCIBILITY: 'INVINCIBILITY',
-            GHOST: 'GHOST',
-            SCORE_MULTIPLIER: 'SCORE_MULTIPLIER',
-            WALL_BUILDER: 'WALL_BUILDER'
+    // --- Fullscreen Toggle for Mobile ---
+    fullscreenButton.addEventListener('click', () => {
+      playButtonSound();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // --- Button Sound Effects ---
+    startButton.addEventListener('click', playButtonSound);
+    restartButton.addEventListener('click', playButtonSound);
+    highScoresButton.addEventListener('click', playButtonSound);
+    itemInfoButton.addEventListener('click', playButtonSound);
+    closeHighScoresButton.addEventListener('click', playButtonSound);
+    closeItemLegendButton.addEventListener('click', playButtonSound);
+
+    // --- Game Variables ---
+    const box = 20;
+    const canvasSize = 600;
+    const HIGH_SCORE_KEY = 'snakeDeluxeHighScores';
+    const MAX_HIGH_SCORES = 5;
+    let snake, currentItem, score, direction, game, baseGameSpeed, currentGameSpeed, changingDirection;
+    let gameActive = false;
+    let effectTimeout = null;
+    let isInvincible = false;
+    let isGhost = false;
+    let scoreMultiplier = 1;
+    let temporaryWalls = [];
+    let wallTimeout = null;
+    let reverseControls = false;  // New power-up effect
+
+    // Touch control variables
+    let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
+    let highScores = [];
+
+    // --- Item Types & Emojis ---
+    const ItemType = {
+      STANDARD_FOOD: 'STANDARD_FOOD',
+      BONUS_FOOD: 'BONUS_FOOD',
+      SPEED_BOOST: 'SPEED_BOOST',
+      SLOW_DOWN: 'SLOW_DOWN',
+      SHRINK: 'SHRINK',
+      INVINCIBILITY: 'INVINCIBILITY',
+      GHOST: 'GHOST',
+      SCORE_MULTIPLIER: 'SCORE_MULTIPLIER',
+      WALL_BUILDER: 'WALL_BUILDER',
+      REVERSE_CONTROLS: 'REVERSE_CONTROLS'  // New power-up
+    };
+
+    const ItemEmoji = {
+      [ItemType.STANDARD_FOOD]: '🍎',
+      [ItemType.BONUS_FOOD]: '💎',
+      [ItemType.SPEED_BOOST]: '🚀',
+      [ItemType.SLOW_DOWN]: '🐢',
+      [ItemType.SHRINK]: '➖',
+      [ItemType.INVINCIBILITY]: '⭐',
+      [ItemType.GHOST]: '👻',
+      [ItemType.SCORE_MULTIPLIER]: '✨',
+      [ItemType.WALL_BUILDER]: '🧱',
+      [ItemType.REVERSE_CONTROLS]: '🔄'
+    };
+
+    // --- Game Initialization ---
+    function initGame() {
+      snake = [{ x: Math.floor(canvasSize / box / 2) * box, y: Math.floor(canvasSize / box / 2) * box }];
+      score = 0;
+      baseGameSpeed = 120;
+      currentGameSpeed = baseGameSpeed;
+      direction = null;
+      changingDirection = false;
+      gameActive = true;
+      clearEffects();
+      temporaryWalls = [];
+      scoreElement.textContent = score;
+      scoreMultiplierIndicator.textContent = '';
+      messageBox.style.display = 'none';
+      instructions.style.display = 'block';
+      startButton.style.display = 'none';
+      restartButton.style.display = 'inline-block';
+      highScoresButton.style.display = 'inline-block';
+      itemInfoButton.style.display = 'inline-block';
+      highScoresDisplay.style.display = 'none';
+      itemLegendDisplay.style.display = 'none';
+      loadHighScores();
+      generateItem();
+      startGameLoop(currentGameSpeed);
+    }
+
+    // --- Game Loop Control ---
+    function startGameLoop(speed) {
+      if (game) clearInterval(game);
+      currentGameSpeed = speed;
+      game = setInterval(gameLoop, currentGameSpeed);
+    }
+
+    function gameLoop() {
+      if (!gameActive) return;
+      changingDirection = false;
+      update();
+      draw();
+    }
+
+    // --- Update Game State ---
+    function update() {
+      if (!direction) return;
+      let snakeX = snake[0].x;
+      let snakeY = snake[0].y;
+      if (direction === "LEFT") snakeX -= box;
+      if (direction === "UP") snakeY -= box;
+      if (direction === "RIGHT") snakeX += box;
+      if (direction === "DOWN") snakeY += box;
+
+      let ateItem = false;
+      let growSnake = false;
+
+      if (currentItem && snakeX === currentItem.x && snakeY === currentItem.y) {
+        ateItem = true;
+        const itemType = currentItem.type;
+        applyItemEffect(itemType);
+        generateItem();
+        if (itemType === ItemType.STANDARD_FOOD || itemType === ItemType.BONUS_FOOD) {
+          growSnake = true;
+        }
+        // Play sound effect for eating an item
+        soundEat.play();
+      }
+
+      if (!growSnake) {
+        if (snake.length > 1 || !ateItem) {
+          snake.pop();
+        }
+      }
+
+      let newHead = { x: snakeX, y: snakeY };
+      let collisionDetected = false;
+      if (snakeX < 0 || snakeX >= canvasSize || snakeY < 0 || snakeY >= canvasSize) {
+        collisionDetected = true;
+      }
+      if (!isInvincible && !isGhost && collision(newHead, snake)) {
+        collisionDetected = true;
+      }
+      if (collision(newHead, temporaryWalls)) {
+        collisionDetected = true;
+      }
+
+      if (collisionDetected) {
+        gameOver();
+        return;
+      }
+
+      snake.unshift(newHead);
+    }
+
+    // --- Apply Item Effects ---
+    function applyItemEffect(type) {
+      clearEffects(false);
+      let pointsToAdd = 0;
+      switch (type) {
+        case ItemType.STANDARD_FOOD: pointsToAdd = 1; break;
+        case ItemType.BONUS_FOOD: pointsToAdd = 5; break;
+        case ItemType.SPEED_BOOST:
+          startGameLoop(Math.max(40, baseGameSpeed - 50));
+          setEffectTimeout(baseGameSpeed, 5000);
+          break;
+        case ItemType.SLOW_DOWN:
+          startGameLoop(baseGameSpeed + 60);
+          setEffectTimeout(baseGameSpeed, 5000);
+          break;
+        case ItemType.SHRINK:
+          if (snake.length > 2) snake.pop();
+          break;
+        case ItemType.INVINCIBILITY:
+          isInvincible = true;
+          setEffectTimeout(baseGameSpeed, 7000);
+          break;
+        case ItemType.GHOST:
+          isGhost = true;
+          setEffectTimeout(baseGameSpeed, 7000);
+          break;
+        case ItemType.SCORE_MULTIPLIER:
+          scoreMultiplier = 2;
+          scoreMultiplierIndicator.textContent = '(x2)';
+          setEffectTimeout(baseGameSpeed, 10000);
+          break;
+        case ItemType.WALL_BUILDER:
+          placeTemporaryWalls(5, 8000);
+          break;
+        case ItemType.REVERSE_CONTROLS:
+          reverseControls = true;
+          setEffectTimeout(baseGameSpeed, 7000);
+          break;
+      }
+      score += (pointsToAdd * scoreMultiplier);
+      scoreElement.textContent = score;
+    }
+
+    // --- Effect Management ---
+    function setEffectTimeout(revertSpeed, duration) {
+      clearTimeout(effectTimeout);
+      effectTimeout = setTimeout(() => {
+        clearEffects(false);
+        startGameLoop(revertSpeed);
+      }, duration);
+    }
+
+    function clearEffects(clearWallTimerAndWalls = true) {
+      isInvincible = false;
+      isGhost = false;
+      reverseControls = false;
+      scoreMultiplier = 1;
+      scoreMultiplierIndicator.textContent = '';
+      if (effectTimeout) {
+        clearTimeout(effectTimeout);
+        effectTimeout = null;
+      }
+      if (clearWallTimerAndWalls) {
+        if (wallTimeout) {
+          clearTimeout(wallTimeout);
+          wallTimeout = null;
+        }
+        temporaryWalls = [];
+      }
+    }
+
+    // --- Temporary Walls ---
+    function placeTemporaryWalls(count, duration) {
+      if (wallTimeout) clearTimeout(wallTimeout);
+      let currentWallCount = temporaryWalls.length;
+      let attempts = 0;
+      while (temporaryWalls.length < currentWallCount + count && attempts < 50) {
+        const wallPos = {
+          x: Math.floor(Math.random() * (canvasSize / box)) * box,
+          y: Math.floor(Math.random() * (canvasSize / box)) * box
         };
+        if (!collision(wallPos, snake) && (!currentItem || (wallPos.x !== currentItem.x || wallPos.y !== currentItem.y)) && !collision(wallPos, temporaryWalls)) {
+          temporaryWalls.push(wallPos);
+        }
+        attempts++;
+      }
+      wallTimeout = setTimeout(() => {
+        temporaryWalls = [];
+        wallTimeout = null;
+      }, duration);
+    }
 
-        // Map ItemType to Emoji for drawing
-        const ItemEmoji = {
-            [ItemType.STANDARD_FOOD]: '🍎',
-            [ItemType.BONUS_FOOD]: '💎',
-            [ItemType.SPEED_BOOST]: '🚀',
-            [ItemType.SLOW_DOWN]: '🐢',
-            [ItemType.SHRINK]: '➖',
-            [ItemType.INVINCIBILITY]: '⭐',
-            [ItemType.GHOST]: '👻',
-            [ItemType.SCORE_MULTIPLIER]: '✨',
-            [ItemType.WALL_BUILDER]: '🧱'
+    // --- Drawing ---
+    function draw() {
+      ctx.fillStyle = "#0a0a1a";
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
+      ctx.fillStyle = "#7f8c8d";
+      ctx.strokeStyle = "#34495e";
+      temporaryWalls.forEach(wall => {
+        ctx.fillRect(wall.x, wall.y, box, box);
+        ctx.strokeRect(wall.x, wall.y, box, box);
+      });
+      let snakeOpacity = 1.0;
+      if (isGhost) snakeOpacity = 0.6;
+      if (isInvincible) snakeOpacity = (Math.floor(Date.now() / 150) % 2 === 0) ? 1.0 : 0.5;
+      ctx.globalAlpha = snakeOpacity;
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = (i === 0) ? "#39ff14" : "#00e000";
+        if (isInvincible && snakeOpacity < 1.0) ctx.fillStyle = (i === 0) ? "#ffd700" : "#e6c300";
+        else if (isInvincible) ctx.fillStyle = (i === 0) ? "#ffff00" : "#e6e600";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+        ctx.strokeStyle = "#008000";
+        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+      }
+      ctx.globalAlpha = 1.0;
+      if(currentItem) drawItem(currentItem);
+    }
+
+    function drawItem(item) {
+      const emoji = ItemEmoji[item.type] || '❓';
+      ctx.fillStyle = "rgba(60, 60, 90, 0.7)";
+      ctx.strokeStyle = "rgba(122, 122, 156, 0.8)";
+      ctx.lineWidth = 1;
+      ctx.fillRect(item.x + 1, item.y + 1, box - 2, box - 2);
+      ctx.strokeRect(item.x + 1, item.y + 1, box - 2, box - 2);
+      ctx.lineWidth = 1;
+      ctx.font = `${box * 0.8}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(emoji, item.x + box / 2, item.y + box / 2 + 1);
+    }
+
+    // --- Item Handling ---
+    function generateItem() {
+      const itemProbabilities = [
+        { type: ItemType.STANDARD_FOOD, weight: 10 },
+        { type: ItemType.BONUS_FOOD, weight: 3 },
+        { type: ItemType.SPEED_BOOST, weight: 1.5 },
+        { type: ItemType.SLOW_DOWN, weight: 1.5 },
+        { type: ItemType.SHRINK, weight: 1 },
+        { type: ItemType.INVINCIBILITY, weight: 0.5 },
+        { type: ItemType.GHOST, weight: 0.7 },
+        { type: ItemType.SCORE_MULTIPLIER, weight: 1.0 },
+        { type: ItemType.WALL_BUILDER, weight: 0.8 },
+        { type: ItemType.REVERSE_CONTROLS, weight: 0.8 }
+      ];
+      const totalWeight = itemProbabilities.reduce((sum, item) => sum + item.weight, 0);
+      let random = Math.random() * totalWeight;
+      let chosenType = ItemType.STANDARD_FOOD;
+      for (const item of itemProbabilities) {
+        if (random < item.weight) { chosenType = item.type; break; }
+        random -= item.weight;
+      }
+      let newItemPosition;
+      let attempts = 0;
+      do {
+        newItemPosition = {
+          x: Math.floor(Math.random() * (canvasSize / box)) * box,
+          y: Math.floor(Math.random() * (canvasSize / box)) * box
         };
+        attempts++;
+      } while ((collision(newItemPosition, snake) || collision(newItemPosition, temporaryWalls)) && attempts < 50);
+      if (attempts >= 50) {
+        newItemPosition = { x: Math.floor(Math.random() * (canvasSize / box)) * box, y: Math.floor(Math.random() * (canvasSize / box)) * box };
+      }
+      currentItem = { ...newItemPosition, type: chosenType };
+    }
 
+    // --- Collision Detection ---
+    function collision(point, array) {
+      for (let i = 0; i < array.length; i++) {
+        if (point.x === array[i].x && point.y === array[i].y) return true;
+      }
+      return false;
+    }
 
-        // --- Game State Variables ---
-        let snake;
-        let currentItem;
-        let score;
-        let direction;
-        let game;
-        let baseGameSpeed;
-        let currentGameSpeed;
-        let changingDirection;
-        let gameActive = false;
+    // --- Game Over & High Score Handling ---
+    function stopGame() {
+      gameActive = false;
+      clearInterval(game);
+      clearEffects(true);
+      instructions.style.display = 'none';
+    }
 
-        // Effect States
-        let effectTimeout = null;
-        let isInvincible = false;
-        let isGhost = false;
-        let scoreMultiplier = 1;
-        let temporaryWalls = [];
-        let wallTimeout = null;
+    function gameOver() {
+      stopGame();
+      const rank = updateHighScores(score);
+      let rankText = (rank > 0 && rank <= MAX_HIGH_SCORES) ? ` - Rank: #${rank}` : '';
+      messageBox.textContent = `Game Over! Score: ${score}${rankText}`;
+      messageBox.style.display = 'block';
+      soundGameOver.play();
+    }
 
-        // Touch control variables
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
-
-        // High Scores
-        let highScores = [];
-
-        // --- Initialization ---
-        function initGame() {
-            snake = [{ x: Math.floor(canvasSize / box / 2) * box, y: Math.floor(canvasSize / box / 2) * box }];
-            score = 0;
-            baseGameSpeed = 120;
-            currentGameSpeed = baseGameSpeed;
-            direction = null;
-            changingDirection = false;
-            gameActive = true;
-
-            clearEffects();
-            temporaryWalls = [];
-
-            scoreElement.textContent = score;
-            scoreMultiplierIndicator.textContent = '';
-            messageBox.style.display = 'none';
-            instructions.style.display = 'block';
-            startButton.style.display = 'none';
-            restartButton.style.display = 'inline-block';
-            highScoresButton.style.display = 'inline-block';
-            itemInfoButton.style.display = 'inline-block'; // Show item info button
-
-            // Close panels if open
-            highScoresDisplay.style.display = 'none';
-            itemLegendDisplay.style.display = 'none';
-
-            loadHighScores();
-            generateItem();
-            startGameLoop(currentGameSpeed);
+    // --- High Score Logic ---
+    function loadHighScores() {
+      try {
+        const scoresJSON = localStorage.getItem(HIGH_SCORE_KEY);
+        highScores = scoresJSON ? JSON.parse(scoresJSON) : [];
+      } catch (e) {
+        console.error("Could not load high scores:", e);
+        highScores = [];
+      }
+    }
+    function saveHighScores() {
+      try {
+        localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(highScores));
+      } catch (e) {
+        console.error("Could not save high scores:", e);
+      }
+    }
+    function updateHighScores(currentScore) {
+      loadHighScores();
+      let rank = -1;
+      if (currentScore > 0 || highScores.length < MAX_HIGH_SCORES) {
+        if (!highScores.includes(currentScore)) {
+          highScores.push(currentScore);
         }
-
-        // --- Game Loop Control ---
-        function startGameLoop(speed) {
-            if (game) clearInterval(game);
-            currentGameSpeed = speed;
-            game = setInterval(gameLoop, currentGameSpeed);
+        highScores.sort((a, b) => b - a);
+        highScores = highScores.slice(0, MAX_HIGH_SCORES);
+        saveHighScores();
+        rank = highScores.indexOf(currentScore) + 1;
+        if (rank === 0 && currentScore <= (highScores[MAX_HIGH_SCORES - 1] || 0)) {
+          rank = -1;
         }
+      }
+      return rank;
+    }
 
-        function gameLoop() {
-            if (!gameActive) return;
-            changingDirection = false;
-            update();
-            draw();
+    // --- Panel Display Logic ---
+    function displayHighScores() {
+      loadHighScores();
+      highScoresList.innerHTML = '';
+      if (highScores.length === 0) {
+        highScoresList.innerHTML = '<li><span>-</span> <span>No scores yet!</span></li>';
+      } else {
+        for (let i = 0; i < MAX_HIGH_SCORES; i++) {
+          const scoreValue = highScores[i] !== undefined ? highScores[i] : '---';
+          const listItem = document.createElement('li');
+          listItem.innerHTML = `<span>${i + 1}.</span> <span>${scoreValue}</span>`;
+          highScoresList.appendChild(listItem);
         }
+      }
+      itemLegendDisplay.style.display = 'none';
+      highScoresDisplay.style.display = 'block';
+    }
 
-        // --- Update Game State ---
-        function update() {
-            if (!direction) return;
+    function displayItemLegend() {
+      highScoresDisplay.style.display = 'none';
+      itemLegendDisplay.style.display = 'block';
+    }
 
-            let snakeX = snake[0].x;
-            let snakeY = snake[0].y;
+    // --- Input Handling ---
+    function handleDirectionChange(event) {
+      const key = event.key || event.keyCode;
+      setDirection(key);
+    }
+    function setDirection(key) {
+      if (changingDirection || !gameActive) return;
+      let newDirection = direction;
+      const currentDirection = direction;
+      if (reverseControls) {
+        if ((key === 'ArrowLeft' || key === 37 || key === 'LEFT') && currentDirection !== "LEFT") newDirection = "RIGHT";
+        else if ((key === 'ArrowUp' || key === 38 || key === 'UP') && currentDirection !== "UP") newDirection = "DOWN";
+        else if ((key === 'ArrowRight' || key === 39 || key === 'RIGHT') && currentDirection !== "RIGHT") newDirection = "LEFT";
+        else if ((key === 'ArrowDown' || key === 40 || key === 'DOWN') && currentDirection !== "DOWN") newDirection = "UP";
+      } else {
+        if ((key === 'ArrowLeft' || key === 37 || key === 'LEFT') && currentDirection !== "RIGHT") newDirection = "LEFT";
+        else if ((key === 'ArrowUp' || key === 38 || key === 'UP') && currentDirection !== "DOWN") newDirection = "UP";
+        else if ((key === 'ArrowRight' || key === 39 || key === 'RIGHT') && currentDirection !== "LEFT") newDirection = "RIGHT";
+        else if ((key === 'ArrowDown' || key === 40 || key === 'DOWN') && currentDirection !== "UP") newDirection = "DOWN";
+      }
+      if (newDirection !== currentDirection) {
+        direction = newDirection;
+        changingDirection = true;
+        if (!game && direction) startGameLoop(currentGameSpeed);
+      }
+    }
+    document.addEventListener("keydown", handleDirectionChange);
+    startButton.addEventListener('click', initGame);
+    restartButton.addEventListener('click', initGame);
+    highScoresButton.addEventListener('click', displayHighScores);
+    closeHighScoresButton.addEventListener('click', () => highScoresDisplay.style.display = 'none');
+    itemInfoButton.addEventListener('click', displayItemLegend);
+    closeItemLegendButton.addEventListener('click', () => itemLegendDisplay.style.display = 'none');
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
 
-            if (direction === "LEFT") snakeX -= box;
-            if (direction === "UP") snakeY -= box;
-            if (direction === "RIGHT") snakeX += box;
-            if (direction === "DOWN") snakeY += box;
+    // --- Touch Controls ---
+    function handleTouchStart(event) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchEndX = touch.clientX;
+      touchEndY = touch.clientY;
+    }
+    function handleTouchMove(event) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      touchEndX = touch.clientX;
+      touchEndY = touch.clientY;
+    }
+    function handleTouchEnd(event) {
+      event.preventDefault();
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+      const threshold = 25;
+      if (Math.abs(diffX) > threshold || Math.abs(diffY) > threshold) {
+        if (Math.abs(diffX) > Math.abs(diffY)) setDirection(diffX > 0 ? 'RIGHT' : 'LEFT');
+        else setDirection(diffY > 0 ? 'DOWN' : 'UP');
+      }
+      touchStartX = 0; touchStartY = 0; touchEndX = 0; touchEndY = 0;
+    }
 
-            let ateItem = false;
-            let growSnake = false;
-
-            if (currentItem && snakeX === currentItem.x && snakeY === currentItem.y) {
-                ateItem = true;
-                const itemType = currentItem.type;
-                applyItemEffect(itemType);
-                generateItem();
-                if (itemType === ItemType.STANDARD_FOOD || itemType === ItemType.BONUS_FOOD) {
-                    growSnake = true;
-                }
-            }
-
-            if (!growSnake) {
-                if (snake.length > 1 || !ateItem) {
-                     snake.pop();
-                }
-            }
-
-            let newHead = { x: snakeX, y: snakeY };
-
-            let collisionDetected = false;
-            if (snakeX < 0 || snakeX >= canvasSize || snakeY < 0 || snakeY >= canvasSize) {
-                collisionDetected = true;
-            }
-            if (!isInvincible && !isGhost && collision(newHead, snake)) {
-                 collisionDetected = true;
-            }
-            if (collision(newHead, temporaryWalls)) {
-                 collisionDetected = true;
-            }
-
-            if (collisionDetected) {
-                gameOver();
-                return;
-            }
-
-            snake.unshift(newHead);
-        }
-
-        // --- Apply Item Effects ---
-        function applyItemEffect(type) {
-            // Don't clear wall effects when picking up another item
-            clearEffects(false); // Clear previous non-wall timed effects
-
-            let pointsToAdd = 0;
-            switch (type) {
-                case ItemType.STANDARD_FOOD: pointsToAdd = 1; break;
-                case ItemType.BONUS_FOOD: pointsToAdd = 5; break;
-                case ItemType.SPEED_BOOST:
-                    startGameLoop(Math.max(40, baseGameSpeed - 50));
-                    setEffectTimeout(baseGameSpeed, 5000);
-                    break;
-                case ItemType.SLOW_DOWN:
-                    startGameLoop(baseGameSpeed + 60);
-                    setEffectTimeout(baseGameSpeed, 5000);
-                    break;
-                case ItemType.SHRINK:
-                    if (snake.length > 2) snake.pop();
-                    break;
-                case ItemType.INVINCIBILITY:
-                    isInvincible = true;
-                    setEffectTimeout(baseGameSpeed, 7000);
-                    break;
-                case ItemType.GHOST:
-                    isGhost = true;
-                    setEffectTimeout(baseGameSpeed, 7000);
-                    break;
-                case ItemType.SCORE_MULTIPLIER:
-                    scoreMultiplier = 2;
-                    scoreMultiplierIndicator.textContent = '(x2)';
-                    setEffectTimeout(baseGameSpeed, 10000);
-                    break;
-                case ItemType.WALL_BUILDER:
-                    placeTemporaryWalls(5, 8000); // This effect has its own timer
-                    break;
-            }
-            score += (pointsToAdd * scoreMultiplier);
-            scoreElement.textContent = score;
-        }
-
-        // --- Effect Management ---
-        function setEffectTimeout(revertSpeed, duration) {
-            clearTimeout(effectTimeout);
-            effectTimeout = setTimeout(() => {
-                clearEffects(false); // Clear flags but not walls
-                startGameLoop(revertSpeed);
-            }, duration);
-        }
-
-        function clearEffects(clearWallTimerAndWalls = true) {
-            isInvincible = false;
-            isGhost = false;
-            scoreMultiplier = 1;
-            scoreMultiplierIndicator.textContent = '';
-            if (effectTimeout) {
-                clearTimeout(effectTimeout);
-                effectTimeout = null;
-            }
-             if (clearWallTimerAndWalls) {
-                 if (wallTimeout) {
-                     clearTimeout(wallTimeout);
-                     wallTimeout = null;
-                 }
-                 temporaryWalls = []; // Clear walls only when specifically told (e.g. game reset)
-             }
-        }
-
-        // --- Temporary Walls ---
-        function placeTemporaryWalls(count, duration) {
-            // Don't clear existing walls immediately, let timer handle it
-            // temporaryWalls = []; // Removed this line
-            if (wallTimeout) clearTimeout(wallTimeout);
-
-            let currentWallCount = temporaryWalls.length;
-            let attempts = 0;
-            while (temporaryWalls.length < currentWallCount + count && attempts < 50) {
-                 const wallPos = {
-                     x: Math.floor(Math.random() * (canvasSize / box)) * box,
-                     y: Math.floor(Math.random() * (canvasSize / box)) * box
-                 };
-                 if (!collision(wallPos, snake) && (!currentItem || (wallPos.x !== currentItem.x || wallPos.y !== currentItem.y)) && !collision(wallPos, temporaryWalls)) {
-                     temporaryWalls.push(wallPos);
-                 }
-                 attempts++;
-            }
-
-            // Set timer to remove ALL temporary walls after duration
-            wallTimeout = setTimeout(() => {
-                temporaryWalls = [];
-                wallTimeout = null;
-            }, duration);
-        }
-
-        // --- Drawing ---
-        function draw() {
-            ctx.fillStyle = "#0a0a1a";
-            ctx.fillRect(0, 0, canvasSize, canvasSize);
-
-            // Draw Temporary Walls
-            ctx.fillStyle = "#7f8c8d";
-            ctx.strokeStyle = "#34495e";
-            temporaryWalls.forEach(wall => {
-                ctx.fillRect(wall.x, wall.y, box, box);
-                ctx.strokeRect(wall.x, wall.y, box, box);
-            });
-
-            // Draw snake
-            let snakeOpacity = 1.0;
-            if (isGhost) snakeOpacity = 0.6;
-            if (isInvincible) snakeOpacity = (Math.floor(Date.now() / 150) % 2 === 0) ? 1.0 : 0.5;
-            ctx.globalAlpha = snakeOpacity;
-
-            for (let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = (i === 0) ? "#39ff14" : "#00e000";
-                 if (isInvincible && snakeOpacity < 1.0) ctx.fillStyle = (i === 0) ? "#ffd700" : "#e6c300";
-                 else if (isInvincible) ctx.fillStyle = (i === 0) ? "#ffff00" : "#e6e600";
-                ctx.fillRect(snake[i].x, snake[i].y, box, box);
-                ctx.strokeStyle = "#008000";
-                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
-            }
-            ctx.globalAlpha = 1.0;
-
-            if(currentItem) drawItem(currentItem);
-        }
-
-        // --- Draw Items (Using Emojis) ---
-        function drawItem(item) {
-             const emoji = ItemEmoji[item.type] || '❓'; // Get emoji, default to question mark
-
-             // Draw a subtle background box
-             ctx.fillStyle = "rgba(60, 60, 90, 0.7)"; // Semi-transparent grey-blue
-             ctx.strokeStyle = "rgba(122, 122, 156, 0.8)"; // Lighter border
-             ctx.lineWidth = 1;
-             ctx.fillRect(item.x + 1, item.y + 1, box - 2, box - 2); // Slightly inset
-             ctx.strokeRect(item.x + 1, item.y + 1, box - 2, box - 2);
-             ctx.lineWidth = 1; // Reset line width if changed elsewhere
-
-
-             // Draw the emoji centered in the box
-             ctx.font = `${box * 0.8}px sans-serif`; // Use a generic font that supports emojis well, adjust size
-             ctx.textAlign = "center";
-             ctx.textBaseline = "middle";
-             // Adjust y-offset slightly for better visual centering of most emojis
-             ctx.fillText(emoji, item.x + box / 2, item.y + box / 2 + 1);
-        }
-
-
-        // --- Item Handling ---
-        function generateItem() {
-             const itemProbabilities = [ /* Probabilities remain the same */
-                 { type: ItemType.STANDARD_FOOD, weight: 10 }, { type: ItemType.BONUS_FOOD, weight: 3 },
-                 { type: ItemType.SPEED_BOOST, weight: 1.5 }, { type: ItemType.SLOW_DOWN, weight: 1.5 },
-                 { type: ItemType.SHRINK, weight: 1 }, { type: ItemType.INVINCIBILITY, weight: 0.5 },
-                 { type: ItemType.GHOST, weight: 0.7 }, { type: ItemType.SCORE_MULTIPLIER, weight: 1.0 },
-                 { type: ItemType.WALL_BUILDER, weight: 0.8 }
-             ];
-            const totalWeight = itemProbabilities.reduce((sum, item) => sum + item.weight, 0);
-            let random = Math.random() * totalWeight;
-            let chosenType = ItemType.STANDARD_FOOD;
-            for (const item of itemProbabilities) {
-                if (random < item.weight) { chosenType = item.type; break; }
-                random -= item.weight;
-            }
-
-            let newItemPosition;
-            let attempts = 0;
-            do {
-                newItemPosition = {
-                    x: Math.floor(Math.random() * (canvasSize / box)) * box,
-                    y: Math.floor(Math.random() * (canvasSize / box)) * box
-                };
-                attempts++;
-            } while ((collision(newItemPosition, snake) || collision(newItemPosition, temporaryWalls)) && attempts < 50);
-             if (attempts >= 50) { // Fallback if grid is very full
-                  newItemPosition = { x: Math.floor(Math.random() * (canvasSize / box)) * box, y: Math.floor(Math.random() * (canvasSize / box)) * box };
-             }
-            currentItem = { ...newItemPosition, type: chosenType };
-        }
-
-        // --- Collision Detection ---
-        function collision(point, array) {
-            for (let i = 0; i < array.length; i++) {
-                if (point.x === array[i].x && point.y === array[i].y) return true;
-            }
-            return false;
-        }
-
-        // --- Game Over & High Score Handling ---
-        function stopGame() {
-            gameActive = false;
-            clearInterval(game);
-            clearEffects(true); // Clear all effects and walls on game stop
-            instructions.style.display = 'none';
-        }
-
-        function gameOver() {
-            stopGame();
-            const rank = updateHighScores(score);
-            let rankText = (rank > 0 && rank <= MAX_HIGH_SCORES) ? ` - Rank: #${rank}` : '';
-            messageBox.textContent = `Game Over! Score: ${score}${rankText}`;
-            messageBox.style.display = 'block';
-        }
-
-        // --- High Score Logic ---
-        function loadHighScores() {
-            try {
-                const scoresJSON = localStorage.getItem(HIGH_SCORE_KEY);
-                highScores = scoresJSON ? JSON.parse(scoresJSON) : [];
-            } catch (e) { console.error("Could not load high scores:", e); highScores = []; }
-        }
-        function saveHighScores() {
-             try { localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(highScores)); }
-             catch (e) { console.error("Could not save high scores:", e); }
-        }
-        function updateHighScores(currentScore) {
-            loadHighScores();
-            let rank = -1;
-            if (currentScore > 0 || highScores.length < MAX_HIGH_SCORES) { // Add score if > 0 or list not full
-                 // Prevent duplicates if score is already top 5
-                 if (!highScores.includes(currentScore)) {
-                    highScores.push(currentScore);
-                 }
-                 highScores.sort((a, b) => b - a);
-                 highScores = highScores.slice(0, MAX_HIGH_SCORES);
-                 saveHighScores();
-                 rank = highScores.indexOf(currentScore) + 1;
-                 // Adjust rank if score wasn't added (e.g., 0 score and list full)
-                 if (rank === 0 && currentScore <= (highScores[MAX_HIGH_SCORES - 1] || 0)) {
-                     rank = -1;
-                 }
-            }
-            return rank;
-        }
-
-        // --- Panel Display Logic ---
-         function displayHighScores() {
-             loadHighScores();
-             highScoresList.innerHTML = ''; // Clear previous list
-             if (highScores.length === 0) {
-                 highScoresList.innerHTML = '<li><span>-</span> <span>No scores yet!</span></li>';
-             } else {
-                 for (let i = 0; i < MAX_HIGH_SCORES; i++) {
-                     const scoreValue = highScores[i] !== undefined ? highScores[i] : '---';
-                     const listItem = document.createElement('li');
-                     listItem.innerHTML = `<span>${i + 1}.</span> <span>${scoreValue}</span>`;
-                     highScoresList.appendChild(listItem);
-                 }
-             }
-             itemLegendDisplay.style.display = 'none'; // Hide other panel
-             highScoresDisplay.style.display = 'block';
-         }
-
-         function displayItemLegend() {
-             highScoresDisplay.style.display = 'none'; // Hide other panel
-             itemLegendDisplay.style.display = 'block';
-         }
-
-        // --- Event Listeners ---
-        document.addEventListener("keydown", handleDirectionChange);
-        startButton.addEventListener('click', initGame);
-        restartButton.addEventListener('click', initGame);
-        // Panel Buttons
-        highScoresButton.addEventListener('click', displayHighScores);
-        closeHighScoresButton.addEventListener('click', () => highScoresDisplay.style.display = 'none');
-        itemInfoButton.addEventListener('click', displayItemLegend);
-        closeItemLegendButton.addEventListener('click', () => itemLegendDisplay.style.display = 'none');
-
-        // Touch Controls
-        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-        canvas.addEventListener('touchend', handleTouchEnd);
-
-        // --- Input Handling ---
-        function handleDirectionChange(event) {
-            const key = event.key || event.keyCode;
-            setDirection(key);
-        }
-        function setDirection(key) {
-             if (changingDirection || !gameActive) return;
-             let newDirection = direction;
-             const currentDirection = direction;
-             if ((key === 'ArrowLeft' || key === 37 || key === 'LEFT') && currentDirection !== "RIGHT") newDirection = "LEFT";
-             else if ((key === 'ArrowUp' || key === 38 || key === 'UP') && currentDirection !== "DOWN") newDirection = "UP";
-             else if ((key === 'ArrowRight' || key === 39 || key === 'RIGHT') && currentDirection !== "LEFT") newDirection = "RIGHT";
-             else if ((key === 'ArrowDown' || key === 40 || key === 'DOWN') && currentDirection !== "UP") newDirection = "DOWN";
-             if (newDirection !== currentDirection) {
-                  direction = newDirection;
-                  changingDirection = true;
-                  if (!game && direction) startGameLoop(currentGameSpeed);
-             }
-        }
-        function handleTouchStart(event) {
-            event.preventDefault(); const touch = event.touches[0];
-            touchStartX = touch.clientX; touchStartY = touch.clientY;
-            touchEndX = touch.clientX; touchEndY = touch.clientY;
-        }
-        function handleTouchMove(event) {
-            event.preventDefault(); const touch = event.touches[0];
-            touchEndX = touch.clientX; touchEndY = touch.clientY;
-        }
-        function handleTouchEnd(event) {
-            event.preventDefault(); const diffX = touchEndX - touchStartX; const diffY = touchEndY - touchStartY;
-            const threshold = 25;
-            if (Math.abs(diffX) > threshold || Math.abs(diffY) > threshold) {
-                 if (Math.abs(diffX) > Math.abs(diffY)) setDirection(diffX > 0 ? 'RIGHT' : 'LEFT');
-                 else setDirection(diffY > 0 ? 'DOWN' : 'UP');
-            }
-            touchStartX = 0; touchStartY = 0; touchEndX = 0; touchEndY = 0;
-        }
-
-        // --- Initial Setup on Load ---
-         function drawInitialScreen() {
-            ctx.fillStyle = "#0a0a1a"; ctx.fillRect(0, 0, canvasSize, canvasSize);
-            ctx.fillStyle = "#e0e0ff"; ctx.font = "24px 'Press Start 2P'";
-            ctx.textAlign = "center"; ctx.fillText("Snake Deluxe!", canvasSize / 2, canvasSize / 2 - 40);
-            ctx.font = "14px 'Press Start 2P'"; ctx.fillText("Press Start", canvasSize / 2, canvasSize / 2 + 10);
-         }
-         window.onload = () => { drawInitialScreen(); loadHighScores(); };
-
-    </script>
+    // --- Initial Setup on Load ---
+    function drawInitialScreen() {
+      ctx.fillStyle = "#0a0a1a";
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
+      ctx.fillStyle = "#e0e0ff";
+      ctx.font = "24px 'Press Start 2P'";
+      ctx.textAlign = "center";
+      ctx.fillText("Snake Deluxe!", canvasSize / 2, canvasSize / 2 - 40);
+      ctx.font = "14px 'Press Start 2P'";
+      ctx.fillText("Press Start", canvasSize / 2, canvasSize / 2 + 10);
+    }
+    window.onload = () => { drawInitialScreen(); loadHighScores(); };
+  </script>
 </body>
 </html>
