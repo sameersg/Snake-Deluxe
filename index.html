@@ -178,14 +178,14 @@
     #item-legend-list .item-desc {
       color: #c0c0e0;
     }
-    /* Joystick Zone Styles: positioned in bottom right */
+    /* Joystick Zone Styles: positioned in bottom right with high z-index */
     #joystickZone {
       position: absolute;
       bottom: 20px;
       right: 20px;
       width: 100px;
       height: 100px;
-      z-index: 10;
+      z-index: 999;
     }
   </style>
 </head>
@@ -205,6 +205,8 @@
       <button id="shareButton">Share</button>
       <!-- Fullscreen button hidden on mobile/standalone -->
       <button id="fullscreenButton">Fullscreen</button>
+      <!-- New Toggle Joystick Button -->
+      <button id="toggleJoystickButton">Hide Joystick</button>
     </div>
     <!-- Joystick container for mobile -->
     <div id="joystickZone"></div>
@@ -244,25 +246,6 @@
       soundButton.play();
     }
 
-    // --- Game Setup ---
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreElement = document.getElementById('score-value');
-    const scoreMultiplierIndicator = document.getElementById('score-multiplier-indicator');
-    const messageBox = document.getElementById('message-box');
-    const startButton = document.getElementById('startButton');
-    const restartButton = document.getElementById('restartButton');
-    const instructions = document.getElementById('instructions');
-    const highScoresButton = document.getElementById('highScoresButton');
-    const highScoresDisplay = document.getElementById('high-scores-display');
-    const highScoresList = document.getElementById('high-scores-list');
-    const closeHighScoresButton = document.getElementById('close-high-scores');
-    const itemInfoButton = document.getElementById('itemInfoButton');
-    const itemLegendDisplay = document.getElementById('item-legend-display');
-    const closeItemLegendButton = document.getElementById('close-item-legend');
-    const shareButton = document.getElementById('shareButton');
-    const fullscreenButton = document.getElementById('fullscreenButton');
-
     // --- Platform Detection ---
     function isMobileDevice() {
       return /Mobi|Android/i.test(navigator.userAgent);
@@ -278,6 +261,7 @@
     }
 
     // --- Share Button (Web Share API) ---
+    const shareButton = document.getElementById('shareButton');
     shareButton.addEventListener('click', () => {
       playButtonSound();
       if (navigator.share) {
@@ -295,16 +279,18 @@
       }
     });
 
-    // --- Joystick Setup for Mobile (NippleJS) ---
-    if (isMobileDevice()) {
+    // --- Joystick Setup ---
+    var joystickManager = null;
+    function initJoystick() {
       const joystickZone = document.getElementById('joystickZone');
-      const manager = nipplejs.create({
+      joystickZone.style.display = "block";
+      joystickManager = nipplejs.create({
         zone: joystickZone,
         mode: 'static',
         position: { right: '50px', bottom: '50px' },
         color: 'white'
       });
-      manager.on('dir', (evt, data) => {
+      joystickManager.on('dir', (evt, data) => {
         if (data.direction) {
           let newDir = data.direction; // "up", "down", "left", "right"
           if (reverseControls) {
@@ -317,6 +303,48 @@
         }
       });
     }
+    function destroyJoystick() {
+      if (joystickManager) {
+        joystickManager.destroy();
+        joystickManager = null;
+      }
+      document.getElementById('joystickZone').style.display = "none";
+    }
+
+    // --- Toggle Joystick Button ---
+    const toggleJoystickButton = document.getElementById('toggleJoystickButton');
+    toggleJoystickButton.addEventListener('click', function() {
+      const joystickZone = document.getElementById('joystickZone');
+      if (joystickZone.style.display === "none" || joystickZone.style.display === "") {
+        initJoystick();
+        this.textContent = "Hide Joystick";
+      } else {
+        destroyJoystick();
+        this.textContent = "Show Joystick";
+      }
+    });
+
+    // Initialize joystick by default on mobile
+    if (isMobileDevice()) {
+      initJoystick();
+    }
+
+    // --- Game Setup ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score-value');
+    const scoreMultiplierIndicator = document.getElementById('score-multiplier-indicator');
+    const messageBox = document.getElementById('message-box');
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const instructions = document.getElementById('instructions');
+    const highScoresButton = document.getElementById('highScoresButton');
+    const highScoresDisplay = document.getElementById('high-scores-display');
+    const highScoresList = document.getElementById('high-scores-list');
+    const closeHighScoresButton = document.getElementById('close-high-scores');
+    const itemInfoButton = document.getElementById('itemInfoButton');
+    const itemLegendDisplay = document.getElementById('item-legend-display');
+    const closeItemLegendButton = document.getElementById('close-item-legend');
 
     // --- Game Variables ---
     const box = 20;
@@ -332,7 +360,7 @@
     let temporaryWalls = [];
     let wallTimeout = null;
     let reverseControls = false;
-    let hasShield = false;  // New variable for shield status
+    let hasShield = false;  // For shield item
 
     // Touch control variables
     let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
@@ -353,7 +381,6 @@
       SHIELD: 'SHIELD',
       TELEPORT: 'TELEPORT'
     };
-
     const ItemEmoji = {
       [ItemType.STANDARD_FOOD]: '🍎',
       [ItemType.BONUS_FOOD]: '💎',
@@ -437,19 +464,17 @@
       }
       let newHead = { x: snakeX, y: snakeY };
       let collisionDetected = false;
-
-      // Check boundaries (shield does not protect against walls)
+      // Check boundaries (shield does not protect against boundaries)
       if (snakeX < 0 || snakeX >= canvasSize || snakeY < 0 || snakeY >= canvasSize) {
         collisionDetected = true;
       }
-
-      // Check collision with self or temporary walls:
+      // Check collision with self or temporary walls
       const selfCollision = collision(newHead, snake);
       const wallTempCollision = collision(newHead, temporaryWalls);
       if (!collisionDetected && (selfCollision || wallTempCollision)) {
         if (hasShield) {
           hasShield = false;
-          // Optionally, display a message or indicator that shield was used.
+          // Optionally show a message that shield was used.
         } else {
           collisionDetected = true;
         }
@@ -501,7 +526,7 @@
           break;
         case ItemType.SHIELD:
           hasShield = true;
-          // Optionally, update an indicator (e.g., append "Shield" to scoreMultiplierIndicator)
+          // Optionally update an indicator for shield status
           break;
         case ItemType.TELEPORT:
           let safePos = getSafePosition();
