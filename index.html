@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <!-- Include Howler.js for sound effects -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <!-- Include NippleJS for mobile joystick support -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.8.6/nipplejs.min.js"></script>
   <style>
     /* Animated gradient background */
     @keyframes gradientAnimation {
@@ -27,6 +29,7 @@
       overflow: hidden;
     }
     .game-container {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -175,6 +178,15 @@
     #item-legend-list .item-desc {
       color: #c0c0e0;
     }
+    /* Joystick Zone Styles: positioned in bottom right */
+    #joystickZone {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 100px;
+      height: 100px;
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -183,15 +195,19 @@
       <span id="score-display">Score: <span id="score-value">0</span><span id="score-multiplier-indicator"></span></span>
     </div>
     <canvas id="gameCanvas" width="600" height="600"></canvas>
-    <div id="instructions">Arrow Keys/Swipe. Survive & Score High! Watch for special items!</div>
+    <div id="instructions">Arrow Keys/Swipe/Joystick. Survive & Score High! Watch for special items!</div>
     <div id="message-box">Game Over!</div>
     <div class="buttons">
       <button id="startButton">Start Game</button>
       <button id="restartButton" style="display: none;">Restart</button>
       <button id="highScoresButton">High Scores</button>
       <button id="itemInfoButton">Item Info</button>
+      <button id="shareButton">Share</button>
+      <!-- Fullscreen button hidden on mobile/standalone -->
       <button id="fullscreenButton">Fullscreen</button>
     </div>
+    <!-- Joystick container for mobile -->
+    <div id="joystickZone"></div>
   </div>
 
   <div id="high-scores-display" class="panel-display">
@@ -213,18 +229,17 @@
       <li><span class="item-emoji">✨</span><div><span class="item-name">Multiplier:</span><span class="item-desc">x2 Score</span></div></li>
       <li><span class="item-emoji">🧱</span><div><span class="item-name">Brick:</span><span class="item-desc">Creates Walls</span></div></li>
       <li><span class="item-emoji">🔄</span><div><span class="item-name">Reverse:</span><span class="item-desc">Reverse Controls</span></div></li>
+      <li><span class="item-emoji">🛡️</span><div><span class="item-name">Shield:</span><span class="item-desc">Absorbs 1 collision (except boundaries)</span></div></li>
+      <li><span class="item-emoji">🚪</span><div><span class="item-name">Teleport:</span><span class="item-desc">Move head to a safe spot</span></div></li>
     </ul>
     <button id="close-item-legend" class="close-button">Close</button>
   </div>
 
   <script>
     // --- Sound Effects Setup ---
-    // Replace the src URLs with your own sound files or free sound URLs
     const soundEat = new Howl({ src: ['sounds/eat.mp3'] });
     const soundGameOver = new Howl({ src: ['sounds/gameover.mp3'] });
     const soundButton = new Howl({ src: ['sounds/button.mp3'] });
-
-    // Utility function to play button sound
     function playButtonSound() {
       soundButton.play();
     }
@@ -245,25 +260,63 @@
     const itemInfoButton = document.getElementById('itemInfoButton');
     const itemLegendDisplay = document.getElementById('item-legend-display');
     const closeItemLegendButton = document.getElementById('close-item-legend');
+    const shareButton = document.getElementById('shareButton');
     const fullscreenButton = document.getElementById('fullscreenButton');
 
-    // --- Fullscreen Toggle for Mobile ---
-    fullscreenButton.addEventListener('click', () => {
+    // --- Platform Detection ---
+    function isMobileDevice() {
+      return /Mobi|Android/i.test(navigator.userAgent);
+    }
+    function isInStandaloneMode() {
+      return (window.navigator.standalone === true) ||
+             (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    }
+    if (isMobileDevice() || isInStandaloneMode()) {
+      fullscreenButton.style.display = 'none';
+    } else {
+      fullscreenButton.style.display = 'inline-block';
+    }
+
+    // --- Share Button (Web Share API) ---
+    shareButton.addEventListener('click', () => {
       playButtonSound();
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
+      if (navigator.share) {
+        navigator.share({
+          title: "Infinite Snake Deluxe",
+          text: "Check out this awesome Snake game!",
+          url: window.location.href
+        }).then(() => {
+          console.log("Shared successfully");
+        }).catch(err => {
+          console.log("Error sharing:", err);
+        });
       } else {
-        document.exitFullscreen();
+        alert("Sharing not supported on your browser.");
       }
     });
 
-    // --- Button Sound Effects ---
-    startButton.addEventListener('click', playButtonSound);
-    restartButton.addEventListener('click', playButtonSound);
-    highScoresButton.addEventListener('click', playButtonSound);
-    itemInfoButton.addEventListener('click', playButtonSound);
-    closeHighScoresButton.addEventListener('click', playButtonSound);
-    closeItemLegendButton.addEventListener('click', playButtonSound);
+    // --- Joystick Setup for Mobile (NippleJS) ---
+    if (isMobileDevice()) {
+      const joystickZone = document.getElementById('joystickZone');
+      const manager = nipplejs.create({
+        zone: joystickZone,
+        mode: 'static',
+        position: { right: '50px', bottom: '50px' },
+        color: 'white'
+      });
+      manager.on('dir', (evt, data) => {
+        if (data.direction) {
+          let newDir = data.direction; // "up", "down", "left", "right"
+          if (reverseControls) {
+            if(newDir === 'left') newDir = 'right';
+            else if(newDir === 'right') newDir = 'left';
+            else if(newDir === 'up') newDir = 'down';
+            else if(newDir === 'down') newDir = 'up';
+          }
+          setDirection(newDir.toUpperCase());
+        }
+      });
+    }
 
     // --- Game Variables ---
     const box = 20;
@@ -278,7 +331,8 @@
     let scoreMultiplier = 1;
     let temporaryWalls = [];
     let wallTimeout = null;
-    let reverseControls = false;  // New power-up effect
+    let reverseControls = false;
+    let hasShield = false;  // New variable for shield status
 
     // Touch control variables
     let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
@@ -295,7 +349,9 @@
       GHOST: 'GHOST',
       SCORE_MULTIPLIER: 'SCORE_MULTIPLIER',
       WALL_BUILDER: 'WALL_BUILDER',
-      REVERSE_CONTROLS: 'REVERSE_CONTROLS'  // New power-up
+      REVERSE_CONTROLS: 'REVERSE_CONTROLS',
+      SHIELD: 'SHIELD',
+      TELEPORT: 'TELEPORT'
     };
 
     const ItemEmoji = {
@@ -308,7 +364,9 @@
       [ItemType.GHOST]: '👻',
       [ItemType.SCORE_MULTIPLIER]: '✨',
       [ItemType.WALL_BUILDER]: '🧱',
-      [ItemType.REVERSE_CONTROLS]: '🔄'
+      [ItemType.REVERSE_CONTROLS]: '🔄',
+      [ItemType.SHIELD]: '🛡️',
+      [ItemType.TELEPORT]: '🚪'
     };
 
     // --- Game Initialization ---
@@ -343,7 +401,6 @@
       currentGameSpeed = speed;
       game = setInterval(gameLoop, currentGameSpeed);
     }
-
     function gameLoop() {
       if (!gameActive) return;
       changingDirection = false;
@@ -363,7 +420,6 @@
 
       let ateItem = false;
       let growSnake = false;
-
       if (currentItem && snakeX === currentItem.x && snakeY === currentItem.y) {
         ateItem = true;
         const itemType = currentItem.type;
@@ -372,33 +428,36 @@
         if (itemType === ItemType.STANDARD_FOOD || itemType === ItemType.BONUS_FOOD) {
           growSnake = true;
         }
-        // Play sound effect for eating an item
         soundEat.play();
       }
-
       if (!growSnake) {
         if (snake.length > 1 || !ateItem) {
           snake.pop();
         }
       }
-
       let newHead = { x: snakeX, y: snakeY };
       let collisionDetected = false;
+
+      // Check boundaries (shield does not protect against walls)
       if (snakeX < 0 || snakeX >= canvasSize || snakeY < 0 || snakeY >= canvasSize) {
         collisionDetected = true;
       }
-      if (!isInvincible && !isGhost && collision(newHead, snake)) {
-        collisionDetected = true;
-      }
-      if (collision(newHead, temporaryWalls)) {
-        collisionDetected = true;
-      }
 
+      // Check collision with self or temporary walls:
+      const selfCollision = collision(newHead, snake);
+      const wallTempCollision = collision(newHead, temporaryWalls);
+      if (!collisionDetected && (selfCollision || wallTempCollision)) {
+        if (hasShield) {
+          hasShield = false;
+          // Optionally, display a message or indicator that shield was used.
+        } else {
+          collisionDetected = true;
+        }
+      }
       if (collisionDetected) {
         gameOver();
         return;
       }
-
       snake.unshift(newHead);
     }
 
@@ -440,9 +499,33 @@
           reverseControls = true;
           setEffectTimeout(baseGameSpeed, 7000);
           break;
+        case ItemType.SHIELD:
+          hasShield = true;
+          // Optionally, update an indicator (e.g., append "Shield" to scoreMultiplierIndicator)
+          break;
+        case ItemType.TELEPORT:
+          let safePos = getSafePosition();
+          if (safePos) {
+            snake[0] = safePos;
+          }
+          break;
       }
       score += (pointsToAdd * scoreMultiplier);
       scoreElement.textContent = score;
+    }
+
+    // --- New Function: Get a Safe Position for Teleport ---
+    function getSafePosition() {
+      let attempts = 0;
+      let pos;
+      while (attempts < 50) {
+        pos = { x: Math.floor(Math.random() * (canvasSize / box)) * box, y: Math.floor(Math.random() * (canvasSize / box)) * box };
+        if (!collision(pos, snake) && pos.x >= 0 && pos.x < canvasSize && pos.y >= 0 && pos.y < canvasSize) {
+          return pos;
+        }
+        attempts++;
+      }
+      return null;
     }
 
     // --- Effect Management ---
@@ -453,7 +536,6 @@
         startGameLoop(revertSpeed);
       }, duration);
     }
-
     function clearEffects(clearWallTimerAndWalls = true) {
       isInvincible = false;
       isGhost = false;
@@ -519,7 +601,6 @@
       ctx.globalAlpha = 1.0;
       if(currentItem) drawItem(currentItem);
     }
-
     function drawItem(item) {
       const emoji = ItemEmoji[item.type] || '❓';
       ctx.fillStyle = "rgba(60, 60, 90, 0.7)";
@@ -546,7 +627,9 @@
         { type: ItemType.GHOST, weight: 0.7 },
         { type: ItemType.SCORE_MULTIPLIER, weight: 1.0 },
         { type: ItemType.WALL_BUILDER, weight: 0.8 },
-        { type: ItemType.REVERSE_CONTROLS, weight: 0.8 }
+        { type: ItemType.REVERSE_CONTROLS, weight: 0.8 },
+        { type: ItemType.SHIELD, weight: 0.7 },
+        { type: ItemType.TELEPORT, weight: 0.5 }
       ];
       const totalWeight = itemProbabilities.reduce((sum, item) => sum + item.weight, 0);
       let random = Math.random() * totalWeight;
@@ -585,7 +668,6 @@
       clearEffects(true);
       instructions.style.display = 'none';
     }
-
     function gameOver() {
       stopGame();
       const rank = updateHighScores(score);
@@ -647,7 +729,6 @@
       itemLegendDisplay.style.display = 'none';
       highScoresDisplay.style.display = 'block';
     }
-
     function displayItemLegend() {
       highScoresDisplay.style.display = 'none';
       itemLegendDisplay.style.display = 'block';
@@ -709,12 +790,18 @@
       event.preventDefault();
       const diffX = touchEndX - touchStartX;
       const diffY = touchEndY - touchStartY;
-      const threshold = 25;
+      const threshold = 15; // Reduced threshold for quicker swipe detection
       if (Math.abs(diffX) > threshold || Math.abs(diffY) > threshold) {
-        if (Math.abs(diffX) > Math.abs(diffY)) setDirection(diffX > 0 ? 'RIGHT' : 'LEFT');
-        else setDirection(diffY > 0 ? 'DOWN' : 'UP');
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          setDirection(diffX > 0 ? 'RIGHT' : 'LEFT');
+        } else {
+          setDirection(diffY > 0 ? 'DOWN' : 'UP');
+        }
       }
-      touchStartX = 0; touchStartY = 0; touchEndX = 0; touchEndY = 0;
+      touchStartX = 0;
+      touchStartY = 0;
+      touchEndX = 0;
+      touchEndY = 0;
     }
 
     // --- Initial Setup on Load ---
