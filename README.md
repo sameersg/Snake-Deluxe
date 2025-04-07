@@ -11,7 +11,7 @@ Infinite Snake Deluxe is a modern twist on the classic snake game. It features:
 ## Live Demo
 
 You can view a live demo of the game here:  
-[Live Demo](https://sameersg.github.io/snake-deluxe/)  
+[Live Demo](https://sameersg.github.io/Snake-Deluxe/)  
 
 
 ## Getting Started
@@ -26,4 +26,4 @@ You can view a live demo of the game here:
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/yourusername/snake-deluxe.git
+   git clone https://github.com/sameersg/snake-deluxe.git
